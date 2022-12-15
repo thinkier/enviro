@@ -35,26 +35,24 @@ def particulates(particulate_data, measure):
   return ((particulate_data[measure * 2] << 8) | particulate_data[measure * 2 + 1]) * multiplier
 
 def get_sensor_readings(seconds_since_last):
+  from ucollections import OrderedDict
+  data = OrderedDict()
   # bme280 returns the register contents immediately and then starts a new reading
   # we want the current reading so do a dummy read to discard register contents first
   bme280.read()
   time.sleep(0.1)
   bme280_data = bme280.read()
+  data["temperature"] = round(bme280_data[0], 2)
+  data["humidity"] = round(bme280_data[2], 2)
+  data["pressure"] = round(bme280_data[1] / 100.0, 2)
   
-  logging.debug("  - starting sensor")
+  logging.debug("  - starting particulate sensor")
   boost_enable_pin.value(True)
   sensor_enable_pin.value(True)
-  logging.debug("  - wait 5 seconds for airflow")
-  time.sleep(5) # allow airflow to start
+  logging.debug("  - waiting 5 seconds for airflow")
 
-  # setup the i2c bus for the particulate sensor
-  logging.debug("  - taking pms5003i reading")
-  pms_i2c = PimoroniI2C(14, 15, 100000)
-  particulate_data = pms_i2c.readfrom_mem(0x12, 0x00, 32)
-
-  sensor_enable_pin.value(False)
-  boost_enable_pin.value(False)
-
+  # allow airflow to start
+  # while doing that, take a microphone reading
   logging.debug("  - taking microphone reading")
   start = time.ticks_ms()
   min_value = 1.65
@@ -65,15 +63,20 @@ def get_sensor_readings(seconds_since_last):
     max_value = max(max_value, value)
   
   noise_vpp = max_value - min_value
+  data["noise"] = round(noise_vpp, 3)
 
-  from ucollections import OrderedDict
-  return OrderedDict({
-    "temperature": round(bme280_data[0], 2),
-    "humidity": round(bme280_data[2], 2),
-    "pressure": round(bme280_data[1] / 100.0, 2),
-    "noise": round(noise_vpp, 3),
-    "pm1": particulates(particulate_data, PM1_UGM3), 
-    "pm2_5": particulates(particulate_data, PM2_5_UGM3), 
-    "pm10": particulates(particulate_data, PM10_UGM3)
-  })
+  while time.ticks_diff(time.ticks_ms(), start) < 5000:
+    time.sleep_ms(10)
+  logging.debug("  - taking pms5003i reading")
+  # setup the i2c bus for the particulate sensor
+  pms_i2c = PimoroniI2C(14, 15, 100000)
+  particulate_data = pms_i2c.readfrom_mem(0x12, 0x00, 32)
 
+  sensor_enable_pin.value(False)
+  boost_enable_pin.value(False)
+
+  data["pm1"] = particulates(particulate_data, PM1_UGM3), 
+  data["pm2_5"] = particulates(particulate_data, PM2_5_UGM3), 
+  data["pm10"] = particulates(particulate_data, PM10_UGM3)
+
+  return data
