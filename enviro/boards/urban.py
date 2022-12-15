@@ -76,7 +76,7 @@ def get_sensor_readings(seconds_since_last):
       time.sleep_ms(10)
 
     co2, temperature, humidity = breakout_scd41.measure()
-    data["co2_ppm"] = co2
+    data["co2"] = co2
     data["temperature"] += temperature
     data["humidity"] += humidity
     data["temperature"] /= 2
@@ -92,8 +92,8 @@ def get_sensor_readings(seconds_since_last):
   sensor_enable_pin.value(False)
   boost_enable_pin.value(False)
 
-  data["pm1"] = particulates(particulate_data, PM1_UGM3), 
-  data["pm2_5"] = particulates(particulate_data, PM2_5_UGM3), 
+  data["pm1"] = particulates(particulate_data, PM1_UGM3)
+  data["pm2_5"] = particulates(particulate_data, PM2_5_UGM3)
   data["pm10"] = particulates(particulate_data, PM10_UGM3)
 
   return data
