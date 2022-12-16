@@ -2,6 +2,7 @@ from enviro import logging
 from enviro.constants import UPLOAD_SUCCESS, UPLOAD_FAILED
 import socket
 import ujson as json
+import time
 import config
 
 def log_destination():
@@ -15,6 +16,7 @@ def upload_reading(reading):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     payload = json.dumps(reading)
     sock.sendto(payload, (ip, int(port)))
+    time.sleep(1)
 
     return UPLOAD_SUCCESS
   except:
