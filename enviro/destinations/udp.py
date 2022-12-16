@@ -11,7 +11,7 @@ def upload_reading(reading):
   ip, port = config.custom_udp_server.split(":")
 
   try:
-    # post reading data to http endpoint
+    # post reading data to udp endpoint
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     payload = json.dumps(reading)
     sock.sendto(payload, (ip, int(port)))
