@@ -76,7 +76,7 @@ def get_sensor_readings(seconds_since_last):
       time.sleep_ms(10)
 
     co2, temperature, humidity = breakout_scd41.measure()
-    data["co2"] = co2
+    data["co2_ppm"] = co2
     data["temperature"] += temperature
     data["humidity"] += humidity
     data["temperature"] /= 2
